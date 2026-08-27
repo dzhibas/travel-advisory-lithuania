@@ -4,7 +4,7 @@ on:
   schedule:
     # GitHub's scheduler is best-effort and often runs 5-20 min late under load.
     # If you need tighter latency, run this on a VPS with a systemd timer instead.
-    - cron: "*/15 * * * *"
+    - cron: "*/30 * * * *"
   workflow_dispatch: {}
 
 permissions:
