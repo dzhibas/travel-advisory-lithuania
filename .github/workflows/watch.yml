@@ -3,8 +3,10 @@ name: lt-advisory-watch
 on:
   schedule:
     # GitHub's scheduler is best-effort and often runs 5-20 min late under load.
+    # Deliberately off :00/:30 -- those are the most oversubscribed minutes on the
+    # platform, and low-activity repos get their runs dropped there, not just delayed.
     # If you need tighter latency, run this on a VPS with a systemd timer instead.
-    - cron: "*/30 * * * *"
+    - cron: "7,37 * * * *"
   workflow_dispatch: {}
 
 permissions:
