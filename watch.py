@@ -300,13 +300,28 @@ def src_de_aa() -> Snapshot:
     )
 
 
+# Nederland Wereldwijd stamps two dates into the page body. "Nog steeds geldig
+# op" is re-stamped every single day even when nothing was edited, so hashing it
+# means an alert every day. Keep both out of the hashed body; they are recorded
+# in extra, which is never diffed.
+NL_VOLATILE_DATES = re.compile(
+    r"^(Laatst gewijzigd op|Nog steeds geldig op):\s*(.*)$", re.MULTILINE
+)
+
+
 def generic_html(source: str, label: str, url: str,
-                 start: str | None = None, end: str | None = None) -> Callable[[], Snapshot]:
+                 start: str | None = None, end: str | None = None,
+                 volatile: re.Pattern[str] | None = None) -> Callable[[], Snapshot]:
     """Fallback adapter for sources with no structured feed.
 
     start/end are literal markers used to slice out the advisory region, so
     nav chrome, cookie banners and rotating promo blocks don't cause false
     positives. Inspect the page once and set them.
+
+    volatile is a line-anchored regex with two groups (label, value) matching
+    text the page re-stamps on its own schedule. Matches are lifted out of the
+    body before it is hashed and parked in extra, so they can never fire an
+    alert on their own.
     """
     def _run() -> Snapshot:
         raw = fetch(url, accept="text/html", browser_ua=True).decode("utf-8", "replace")
@@ -315,11 +330,17 @@ def generic_html(source: str, label: str, url: str,
         if end and end in raw:
             raw = raw.split(end, 1)[0]
         text = html_to_text(raw)
+        extra: dict[str, str] = {}
+        if volatile is not None:
+            for key, val in volatile.findall(text):
+                extra[key] = val.strip()
+            text = normalise(volatile.sub("", text))
         return Snapshot(
             source=source, label=label, url=url,
             level="(unparsed - html source)",
             official_updated="",
             body=text,
+            extra=extra,
         )
     return _run
 
@@ -337,6 +358,7 @@ SOURCES: dict[str, Callable[[], Snapshot]] = {
     "nl-bz": generic_html(
         "nl-bz", "Nederland Wereldwijd",
         "https://www.nederlandwereldwijd.nl/reizen/reisadviezen/litouwen",
+        volatile=NL_VOLATILE_DATES,
     ),
 }
 

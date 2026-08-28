@@ -48,6 +48,11 @@ Alerts go to ntfy and/or Telegram — set whichever env vars you want:
   latter. `details.change_history` gives you a human-written note per change.
 - **Canada's payload embeds a generation timestamp.** `metadata.generated.timestamp`
   changes on *every* request. Hashing the whole document alerts you every 15 minutes.
+- **The Dutch page re-stamps a date daily.** The body carries both `Laatst gewijzigd
+  op:` (the real edit date) and `Nog steeds geldig op:` (today's date, bumped every
+  day regardless). Both are pulled out of the body before hashing and parked in
+  `extra`, which is never diffed — see `NL_VOLATILE_DATES` and the `volatile=`
+  argument to `generic_html`.
   Only `data.eng.*` sections are diffed.
 - **Germany's `lastModified` is epoch seconds**, not milliseconds.
 - **US level lives in the RSS item title** (`Lithuania - Level 1: ...`), not the body.
